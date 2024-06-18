@@ -1,46 +1,33 @@
 import streamlit as st
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
-from diffusers import StableDiffusionPipeline
-import torch
-from huggingface_hub import login
-import os
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from diffusers import DiffusionPipeline
 
-# Login to Hugging Face
-login(token="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")
 
-# Load the translation model
 @st.cache_resource
 def load_translation_model():
     tokenizer = AutoTokenizer.from_pretrained("utrobinmv/t5_translate_en_ru_zh_large_1024")
     model = AutoModelForSeq2SeqLM.from_pretrained("utrobinmv/t5_translate_en_ru_zh_large_1024")
     return tokenizer, model
 
-# Load the image generation model
 @st.cache_resource
 def load_image_generation_model():
     try:
-        model = StableDiffusionPipeline.from_pretrained(
-            "stabilityai/stable-diffusion-3-medium", 
-            torch_dtype=torch.float16
-        ).to("cuda")
+        model = DiffusionPipeline.from_pretrained("stabilityai/stable-diffusion-3-medium-diffusers")
     except Exception as e:
         st.error(f"An error occurred while loading the model: {e}")
         return None
     return model
 
-# Translation function
 def translate_text(tokenizer, model, text):
     inputs = tokenizer(text, return_tensors="pt", padding=True)
     outputs = model.generate(**inputs)
     translated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return translated_text
 
-# Image generation function
 def generate_image(model, prompt):
     image = model(prompt).images[0]
     return image
 
-# Streamlit interface
 def main():
     st.title("Генерация виртуальных декораций в театре")
     
